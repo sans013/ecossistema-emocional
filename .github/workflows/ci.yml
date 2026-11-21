@@ -1,0 +1,80 @@
+name: CI - Ecossistema Emocional
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  database-check:
+    name: Banco de Dados - Validar script DDL
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ci_ephemeral_password
+          POSTGRES_DB: ecossistema_emocional_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Instalar cliente psql
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+      - name: Executar database/init.sql (1ª execução)
+        env:
+          PGPASSWORD: ci_ephemeral_password
+        run: psql -h localhost -U postgres -d ecossistema_emocional_ci -v ON_ERROR_STOP=1 -f database/init.sql
+      - name: Validar idempotência (2ª execução)
+        env:
+          PGPASSWORD: ci_ephemeral_password
+        run: psql -h localhost -U postgres -d ecossistema_emocional_ci -v ON_ERROR_STOP=1 -f database/init.sql
+
+  backend-checks:
+    name: Backend - Lint e Testes
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Verificar inicialização do backend
+        id: check_backend
+        run: test -f package.json && echo "exists=true" >> "$GITHUB_OUTPUT" || echo "exists=false" >> "$GITHUB_OUTPUT"
+      - name: Instalar dependências
+        if: steps.check_backend.outputs.exists == 'true'
+        run: npm ci
+      - name: Rodar testes
+        if: steps.check_backend.outputs.exists == 'true'
+        run: npm test
+
+  mobile-checks:
+    name: Mobile - Lint e Testes
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Verificar inicialização do mobile
+        id: check_mobile
+        run: test -f package.json && echo "exists=true" >> "$GITHUB_OUTPUT" || echo "exists=false" >> "$GITHUB_OUTPUT"
+      - name: Instalar dependências
+        if: steps.check_mobile.outputs.exists == 'true'
+        run: npm ci
+      - name: Rodar testes
+        if: steps.check_mobile.outputs.exists == 'true'
+        run: npm test
