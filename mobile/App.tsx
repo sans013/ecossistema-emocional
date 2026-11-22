@@ -1,20 +1,51 @@
+import React, { useMemo } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { getMobileEnv } from './src/data/config/env';
+import { HttpClient } from './src/data/http/HttpClient';
+import { AppObservabilityService } from './src/data/observability/AppObservabilityService';
+import { ApiAuthRepository } from './src/data/repositories/ApiAuthRepository';
+import { ApiUserRepository } from './src/data/repositories/ApiUserRepository';
+import { SecureTokenStorage } from './src/data/storage/SecureTokenStorage';
+import { RootNavigator } from './src/presentation/navigation/RootNavigator';
+import { ThemeProvider } from './src/presentation/theme/ThemeContext';
+import { SessionProvider, useSession } from './src/presentation/viewmodels/SessionContext';
 
-export default function App() {
+function AppWithTheme() {
+  const { fontSizeOption } = useSession();
   return (
-    <View style={styles.container}>
-      <Text>Open up App.tsx to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
+    <ThemeProvider fontSizeOption={fontSizeOption}>
+      <StatusBar style="dark" />
+      <RootNavigator />
+    </ThemeProvider>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
+export default function App() {
+  const dependencies = useMemo(() => {
+    const env = getMobileEnv();
+    const tokenStorage = new SecureTokenStorage();
+    const observability = new AppObservabilityService(env.enableCrashlytics);
+    const httpClient = new HttpClient(env.apiBaseUrl, tokenStorage, observability);
+
+    return {
+      authRepository: new ApiAuthRepository(httpClient),
+      userRepository: new ApiUserRepository(httpClient),
+      tokenStorage,
+      observability,
+    };
+  }, []);
+
+  return (
+    <SafeAreaProvider>
+      <SessionProvider
+        authRepository={dependencies.authRepository}
+        userRepository={dependencies.userRepository}
+        tokenStorage={dependencies.tokenStorage}
+        observability={dependencies.observability}
+      >
+        <AppWithTheme />
+      </SessionProvider>
+    </SafeAreaProvider>
+  );
+}
