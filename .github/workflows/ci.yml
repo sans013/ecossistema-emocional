@@ -86,7 +86,6 @@ jobs:
           CORS_ORIGIN: http://localhost:8081
         run: npm run test:integration
 
-
 mobile-checks:
     name: Mobile - Typecheck e Testes
     runs-on: ubuntu-latest
