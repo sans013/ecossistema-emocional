@@ -2,9 +2,13 @@ name: CI - Ecossistema Emocional
 
 on:
   push:
-    branches: [main, develop]
+    branches:
+      - main
+      - develop
   pull_request:
-    branches: [main, develop]
+    branches:
+      - main
+      - develop
 
 jobs:
   database-check:
@@ -28,17 +32,17 @@ jobs:
       - uses: actions/checkout@v4
       - name: Instalar cliente psql
         run: sudo apt-get update && sudo apt-get install -y postgresql-client
-      - name: Executar database/init.sql (1ª execução)
+      - name: Executar database/init.sql (1a execucao)
         env:
           PGPASSWORD: ci_ephemeral_password
         run: psql -h localhost -U postgres -d ecossistema_emocional_ci -v ON_ERROR_STOP=1 -f database/init.sql
-      - name: Validar idempotência (2ª execução)
+      - name: Validar idempotencia (2a execucao)
         env:
           PGPASSWORD: ci_ephemeral_password
         run: psql -h localhost -U postgres -d ecossistema_emocional_ci -v ON_ERROR_STOP=1 -f database/init.sql
-        
+
   backend-checks:
-    name: Backend - Typecheck, Unitários e Integração
+    name: Backend - Typecheck, Unitarios e Integracao
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -65,16 +69,16 @@ jobs:
         run: |
           sudo apt-get update && sudo apt-get install -y postgresql-client
           psql -h localhost -U postgres -d ecossistema_emocional_ci -v ON_ERROR_STOP=1 -f database/init.sql
-      - name: Instalar dependências do backend
+      - name: Instalar dependencias do backend
         working-directory: backend
         run: npm ci
       - name: Verificar tipos (TypeScript)
         working-directory: backend
         run: npm run typecheck
-      - name: Rodar testes unitários
+      - name: Rodar testes unitarios
         working-directory: backend
         run: npm test
-      - name: Rodar testes de integração (PostgreSQL real)
+      - name: Rodar testes de integracao (PostgreSQL real)
         working-directory: backend
         env:
           NODE_ENV: test
@@ -86,7 +90,7 @@ jobs:
           CORS_ORIGIN: http://localhost:8081
         run: npm run test:integration
 
-mobile-checks:
+  mobile-checks:
     name: Mobile - Typecheck e Testes
     runs-on: ubuntu-latest
     defaults:
@@ -97,9 +101,9 @@ mobile-checks:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - name: Instalar dependências do mobile
+      - name: Instalar dependencias do mobile
         run: npm ci
       - name: Verificar tipos (TypeScript)
         run: npm run typecheck
-      - name: Rodar testes unitários
+      - name: Rodar testes unitarios
         run: npm test
