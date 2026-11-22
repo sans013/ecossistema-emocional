@@ -16,6 +16,7 @@ export type AppStackParamList = {
   RecordSaved: {
     recordId: string;
     nivelHumor: number;
+    mensagemFlor?: string | null;
   };
   RecordDetail: { recordId: string };
   EditRecord: { recordId: string };

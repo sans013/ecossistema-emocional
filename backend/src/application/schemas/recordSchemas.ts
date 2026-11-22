@@ -22,6 +22,13 @@ const recordBodySchema = z.object({
     .nullable()
     .optional()
     .transform((val) => (!val || val.length === 0 ? null : val)),
+  mensagem_flor: z
+    .string()
+    .trim()
+    .max(1000, 'A mensagem da flor pode ter no máximo 1000 caracteres.')
+    .nullable()
+    .optional()
+    .transform((val) => (val === undefined ? undefined : !val || val.length === 0 ? null : val)),
 });
 
 export const createRecordSchema = recordBodySchema;

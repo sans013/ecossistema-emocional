@@ -16,6 +16,7 @@ interface RecordRow {
   usuario_id: string;
   nivel_humor: number;
   pensamento: string | null;
+  mensagem_flor: string | null;
   registrado_em: Date;
   atualizado_em: Date;
   contextos: ContextSlug[] | null;
@@ -28,6 +29,7 @@ function mapRecord(row: RecordRow): EmotionalRecord {
     nivelHumor: Number(row.nivel_humor),
     contextos: row.contextos ?? [],
     pensamento: row.pensamento,
+    mensagemFlor: row.mensagem_flor ?? null,
     registradoEm: row.registrado_em,
     atualizadoEm: row.atualizado_em,
   };
@@ -60,10 +62,10 @@ export class PgEmotionalRecordRepository implements EmotionalRecordRepository {
       await client.query('BEGIN');
 
       const insertResult = await client.query<RecordRow>(
-        `INSERT INTO registros_emocionais (usuario_id, nivel_humor, pensamento)
-         VALUES ($1, $2, $3)
-         RETURNING id, usuario_id, nivel_humor, pensamento, registrado_em, atualizado_em`,
-        [data.usuarioId, data.nivelHumor, data.pensamento]
+        `INSERT INTO registros_emocionais (usuario_id, nivel_humor, pensamento, mensagem_flor)
+         VALUES ($1, $2, $3, $4)
+         RETURNING id, usuario_id, nivel_humor, pensamento, mensagem_flor, registrado_em, atualizado_em`,
+        [data.usuarioId, data.nivelHumor, data.pensamento, data.mensagemFlor ?? null]
       );
 
       const created = insertResult.rows[0];
@@ -110,7 +112,7 @@ export class PgEmotionalRecordRepository implements EmotionalRecordRepository {
     }
 
     const result = await this.pool.query<RecordRow>(
-      `SELECT r.id, r.usuario_id, r.nivel_humor, r.pensamento,
+      `SELECT r.id, r.usuario_id, r.nivel_humor, r.pensamento, r.mensagem_flor,
               r.registrado_em, r.atualizado_em,
               COALESCE(array_agg(c.slug ORDER BY c.id) FILTER (WHERE c.slug IS NOT NULL), '{}') AS contextos
        FROM registros_emocionais r
@@ -127,7 +129,7 @@ export class PgEmotionalRecordRepository implements EmotionalRecordRepository {
 
   async findByIdAndUser(id: string, userId: string): Promise<EmotionalRecord | null> {
     const result = await this.pool.query<RecordRow>(
-      `SELECT r.id, r.usuario_id, r.nivel_humor, r.pensamento,
+      `SELECT r.id, r.usuario_id, r.nivel_humor, r.pensamento, r.mensagem_flor,
               r.registrado_em, r.atualizado_em,
               COALESCE(array_agg(c.slug ORDER BY c.id) FILTER (WHERE c.slug IS NOT NULL), '{}') AS contextos
        FROM registros_emocionais r
@@ -151,14 +153,23 @@ export class PgEmotionalRecordRepository implements EmotionalRecordRepository {
     try {
       await client.query('BEGIN');
 
+      const shouldUpdateFlowerMessage = data.mensagemFlor !== undefined;
       const updateResult = await client.query<RecordRow>(
         `UPDATE registros_emocionais
          SET nivel_humor = $3,
              pensamento = $4,
+             mensagem_flor = CASE WHEN $5::boolean THEN $6 ELSE mensagem_flor END,
              atualizado_em = NOW()
          WHERE id = $1 AND usuario_id = $2
-         RETURNING id, usuario_id, nivel_humor, pensamento, registrado_em, atualizado_em`,
-        [id, userId, data.nivelHumor, data.pensamento]
+         RETURNING id, usuario_id, nivel_humor, pensamento, mensagem_flor, registrado_em, atualizado_em`,
+        [
+          id,
+          userId,
+          data.nivelHumor,
+          data.pensamento,
+          shouldUpdateFlowerMessage,
+          data.mensagemFlor ?? null,
+        ]
       );
 
       const updated = updateResult.rows[0];

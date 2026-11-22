@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { StyleSheet, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { Ionicons } from '@expo/vector-icons';
 import { ApiError } from '../../data/http/HttpClient';
+import { getFlowerByMood } from '../../domain/catalog/FlowerCatalog';
 import { ContextSlug } from '../../domain/entities/EmotionalRecord';
 import { AppButton } from '../components/AppButton';
 import { AppCard } from '../components/AppCard';
@@ -22,13 +24,16 @@ type Props = NativeStackScreenProps<AppStackParamList, 'CreateRecord'>;
 export function CreateRecordScreen({ navigation }: Props) {
   const { scaledFont } = useAppTheme();
   const { preferences, isConnected } = useSession();
-  const { createRecord } = useRecords();
+  const { createRecord, generateFlowerMessage } = useRecords();
 
   const [selectedMood, setSelectedMood] = useState<number>(4);
   const [selectedContexts, setSelectedContexts] = useState<ContextSlug[]>([]);
   const [thought, setThought] = useState('');
+  const [useIAGen, setUseIAGen] = useState(true);
   const [savingMode, setSavingMode] = useState<'quick' | 'full' | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const selectedFlower = getFlowerByMood(selectedMood);
 
   const toggleContext = (slug: ContextSlug) => {
     setSelectedContexts((prev) =>
@@ -39,15 +44,34 @@ export function CreateRecordScreen({ navigation }: Props) {
   const handleSave = async (mode: 'quick' | 'full') => {
     setErrorMessage(null);
     setSavingMode(mode);
+    const chosenContexts = mode === 'quick' ? [] : selectedContexts;
+    const chosenThought = mode === 'quick' ? null : thought.trim() || null;
+
     try {
+      let mensagemFlor: string | undefined;
+
+      if (useIAGen) {
+        const aiResult = await generateFlowerMessage({
+          nivelHumor: selectedMood,
+          contextos: chosenContexts,
+          pensamento: chosenThought,
+        });
+        if (aiResult.geradoPorIA) {
+          mensagemFlor = aiResult.mensagem;
+        }
+      }
+
       const created = await createRecord({
         nivelHumor: selectedMood,
-        contextos: mode === 'quick' ? [] : selectedContexts,
-        pensamento: mode === 'quick' ? null : thought.trim() || null,
+        contextos: chosenContexts,
+        pensamento: chosenThought,
+        ...(mensagemFlor ? { mensagemFlor } : {}),
       });
+
       navigation.replace('RecordSaved', {
         recordId: created.id,
         nivelHumor: created.nivelHumor,
+        ...(mensagemFlor ? { mensagemFlor } : {}),
       });
     } catch (err) {
       if (err instanceof ApiError) {
@@ -78,6 +102,20 @@ export function CreateRecordScreen({ navigation }: Props) {
           customLabels={preferences.rotulosHumorCustom}
           showLabels={preferences.rotulosSempreVisiveis}
         />
+
+        <View
+          style={[
+            styles.flowerBanner,
+            { backgroundColor: selectedFlower.ceuFundo, borderColor: selectedFlower.ceuBorda },
+          ]}
+        >
+          <AppText variant="cardTitle" color={selectedFlower.corDestaque}>
+            {selectedFlower.iconeClima} Flor do dia: {selectedFlower.flor} ({selectedFlower.clima})
+          </AppText>
+          <AppText variant="caption" style={styles.flowerSymbolism}>
+            {selectedFlower.simbolismo}
+          </AppText>
+        </View>
       </View>
 
       <View style={styles.section}>
@@ -116,6 +154,25 @@ export function CreateRecordScreen({ navigation }: Props) {
         </AppCard>
       </View>
 
+      <Pressable
+        accessibilityRole="checkbox"
+        accessibilityState={{ checked: useIAGen }}
+        onPress={() => setUseIAGen((prev) => !prev)}
+        style={[styles.aiConsentCard, useIAGen && styles.aiConsentCardActive]}
+      >
+        <View style={[styles.checkboxBox, useIAGen && styles.checkboxBoxChecked]}>
+          {useIAGen && <Ionicons name="checkmark" size={15} color={COLORS.textOnPrimary} />}
+        </View>
+        <View style={styles.aiConsentCopy}>
+          <AppText variant="cardTitle">
+            Gerar mensagem personalizada da flor com IAGen
+          </AppText>
+          <AppText variant="caption" style={styles.aiConsentHint}>
+            Aviso LGPD: apenas o humor, os contextos e o texto opcional acima são enviados de forma anonimizada (sem nome ou e-mail) à API de IAGen para redigir uma mensagem de apoio não clínico.
+          </AppText>
+        </View>
+      </Pressable>
+
       {errorMessage && (
         <AppCard style={styles.errorBox}>
           <AppText variant="caption" color={COLORS.danger}>
@@ -152,6 +209,15 @@ const styles = StyleSheet.create({
   sectionTitle: {
     marginBottom: 8,
   },
+  flowerBanner: {
+    marginTop: 10,
+    borderRadius: RADII.md,
+    borderWidth: 1,
+    padding: 12,
+  },
+  flowerSymbolism: {
+    marginTop: 3,
+  },
   helper: {
     marginTop: 6,
   },
@@ -163,6 +229,41 @@ const styles = StyleSheet.create({
   textArea: {
     minHeight: 88,
     textAlignVertical: 'top',
+  },
+  aiConsentCard: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: RADII.md,
+    padding: 12,
+    marginBottom: SPACING.md,
+  },
+  aiConsentCardActive: {
+    backgroundColor: COLORS.primarySoft,
+    borderColor: COLORS.primary,
+  },
+  checkboxBox: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: COLORS.primary,
+    backgroundColor: COLORS.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 2,
+  },
+  checkboxBoxChecked: {
+    backgroundColor: COLORS.primary,
+  },
+  aiConsentCopy: {
+    flex: 1,
+  },
+  aiConsentHint: {
+    marginTop: 4,
   },
   errorBox: {
     backgroundColor: COLORS.dangerSoft,

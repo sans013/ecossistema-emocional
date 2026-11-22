@@ -5,18 +5,18 @@ import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { ApiError } from '../../data/http/HttpClient';
-import { getMoodDefinition } from '../../domain/entities/MoodCatalog';
+import { getFlowerByMood } from '../../domain/catalog/FlowerCatalog';
 import { AppButton } from '../components/AppButton';
 import { AppCard } from '../components/AppCard';
 import { AppText } from '../components/AppText';
 import { ConnectionBanner } from '../components/ConnectionBanner';
-import { MoodGlyph } from '../components/MoodGlyph';
+import { FloriculturaShelf } from '../components/FloriculturaShelf';
 import { MoodScaleSelector } from '../components/MoodScaleSelector';
 import { ScreenContainer } from '../components/ScreenContainer';
 import { useAppTheme } from '../theme/ThemeContext';
 import { COLORS, RADII, SPACING } from '../theme/tokens';
 import { AppStackParamList, MainTabParamList } from '../types/navigation';
-import { formatRecordDate, useRecords } from '../viewmodels/RecordsViewModel';
+import { useRecords } from '../viewmodels/RecordsViewModel';
 import { useSession } from '../viewmodels/SessionContext';
 
 type NavProp = CompositeNavigationProp<
@@ -27,32 +27,39 @@ type NavProp = CompositeNavigationProp<
 export function HomeScreen() {
   const navigation = useNavigation<NavProp>();
   const { dayShift } = useAppTheme();
-  const { user, preferences, isConnected, ecosystemLevel } = useSession();
-  const { records, createRecord } = useRecords();
+  const { user, preferences, isConnected, ecosystemLevel, fontSizeOption } = useSession();
+  const { records, createRecord, generateFlowerMessage } = useRecords();
 
   const [selectedMood, setSelectedMood] = useState<number>(4);
   const [savingQuick, setSavingQuick] = useState(false);
   const [feedbackError, setFeedbackError] = useState<string | null>(null);
 
-  const latestRecord = records[0] ?? null;
-  const activeMood = latestRecord
-    ? getMoodDefinition(latestRecord.nivelHumor, preferences.rotulosHumorCustom)
-    : getMoodDefinition(selectedMood, preferences.rotulosHumorCustom);
-
   const firstName = user?.nomeExibicao?.split(' ')[0] ?? 'você';
+  const selectedFlower = getFlowerByMood(selectedMood);
+  const fontScale =
+    fontSizeOption === 'extra_grande' ? 1.2 : fontSizeOption === 'grande' ? 1.1 : 1;
 
   const handleQuickSave = async () => {
     setFeedbackError(null);
     setSavingQuick(true);
     try {
-      const created = await createRecord({
+      const aiResult = await generateFlowerMessage({
         nivelHumor: selectedMood,
         contextos: [],
         pensamento: null,
       });
+
+      const created = await createRecord({
+        nivelHumor: selectedMood,
+        contextos: [],
+        pensamento: null,
+        ...(aiResult.geradoPorIA ? { mensagemFlor: aiResult.mensagem } : {}),
+      });
+
       navigation.navigate('RecordSaved', {
         recordId: created.id,
         nivelHumor: created.nivelHumor,
+        ...(aiResult.geradoPorIA ? { mensagemFlor: aiResult.mensagem } : {}),
       });
     } catch (err) {
       if (err instanceof ApiError) {
@@ -112,41 +119,23 @@ export function HomeScreen() {
       </AppText>
 
       {ecosystemLevel !== 'desativada' && (
-        <AppCard style={styles.ecosystemCard}>
-          <View style={styles.climateBadge}>
-            <Ionicons name="partly-sunny-outline" size={15} color={COLORS.primaryDark} />
-            <AppText variant="caption" color={COLORS.primaryDark} style={styles.climateBadgeText}>
-              Clima de hoje: {activeMood.climateLabel}
-            </AppText>
-          </View>
-
-          <View style={styles.terrariumBox}>
-            <MoodGlyph
-              iconKey={activeMood.iconKey}
-              softColor={activeMood.softColor}
-              accentColor={activeMood.accentColor}
-              size="lg"
-              showLabels={false}
-            />
-            <AppText variant="cardTitle" style={styles.terrariumTitle}>
-              {ecosystemLevel === 'completa'
-                ? 'Jardim simbiótico em harmonia'
-                : 'Seu ecossistema está em equilíbrio tranquilo'}
-            </AppText>
-            <AppText variant="caption" style={styles.terrariumHint}>
-              {latestRecord
-                ? `Último registro: ${formatRecordDate(latestRecord.registradoEm)}`
-                : 'Sem cobranças ou sequências: ele acolhe o seu ritmo.'}
-            </AppText>
-          </View>
+        <View style={styles.floriculturaWrapper}>
+          <FloriculturaShelf
+            records={records}
+            nivelEcossistema={ecosystemLevel}
+            customMoodLabels={preferences.rotulosHumorCustom}
+            fontScale={fontScale}
+            onPressRegisterToday={() => navigation.navigate('CreateRecord')}
+            onPressRecord={(rec) => navigation.navigate('RecordDetail', { recordId: rec.id })}
+          />
 
           <View style={styles.ecosystemFooter}>
             <View style={styles.ecosystemCopy}>
               <AppText variant="caption" style={styles.ecoLabel}>
-                Seu ecossistema ({ecosystemLevel})
+                Floricultura semanal ({ecosystemLevel})
               </AppText>
               <AppText variant="caption">
-                Ele cresce no seu ritmo, sem pressa. Tudo bem fazer pausas.
+                Toque em qualquer vaso para rever o clima e a flor daquele dia — sem cobranças ou sequências.
               </AppText>
             </View>
             <Pressable
@@ -160,7 +149,7 @@ export function HomeScreen() {
               </AppText>
             </Pressable>
           </View>
-        </AppCard>
+        </View>
       )}
 
       <AppCard style={styles.checkinCard}>
@@ -168,7 +157,7 @@ export function HomeScreen() {
           Como você está se sentindo agora?
         </AppText>
         <AppText variant="caption" style={styles.checkinSubtitle}>
-          Escolha o clima que mais combina com este momento.
+          Flor selecionada: {selectedFlower.iconeClima} {selectedFlower.flor} ({selectedFlower.clima}).
         </AppText>
 
         <MoodScaleSelector
@@ -187,7 +176,7 @@ export function HomeScreen() {
 
         <View style={styles.actionsRow}>
           <AppButton
-            label="Salvar rápido"
+            label={savingQuick ? 'Cultivando...' : 'Salvar rápido'}
             variant="outlined"
             loading={savingQuick}
             onPress={() => void handleQuickSave()}
@@ -243,43 +232,15 @@ const styles = StyleSheet.create({
   subtitle: {
     marginBottom: SPACING.md,
   },
-  ecosystemCard: {
+  floriculturaWrapper: {
     marginBottom: SPACING.md,
-  },
-  climateBadge: {
-    alignSelf: 'flex-start',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: COLORS.warningBg,
-    borderRadius: RADII.pill,
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    marginBottom: SPACING.sm,
-  },
-  climateBadgeText: {
-    fontWeight: '600',
-  },
-  terrariumBox: {
-    backgroundColor: COLORS.surfaceMuted,
-    borderRadius: RADII.md,
-    padding: SPACING.md,
-    alignItems: 'center',
-    marginBottom: SPACING.md,
-  },
-  terrariumTitle: {
-    marginTop: SPACING.sm,
-    textAlign: 'center',
-  },
-  terrariumHint: {
-    marginTop: 4,
-    textAlign: 'center',
   },
   ecosystemFooter: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 10,
+    paddingHorizontal: 4,
   },
   ecosystemCopy: {
     flex: 1,
@@ -292,6 +253,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
+    backgroundColor: COLORS.surface,
     borderWidth: 1,
     borderColor: COLORS.border,
     borderRadius: RADII.pill,

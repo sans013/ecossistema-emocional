@@ -29,7 +29,7 @@ export function PrivacyPolicyScreen({ navigation }: Props) {
         Política de Privacidade
       </AppText>
       <AppText variant="subtitle" style={styles.subtitle}>
-        Explicação clara e direta sobre como cuidamos dos seus dados (LGPD)
+        Explicação clara e direta sobre como cuidamos dos seus dados sensíveis (LGPD)
       </AppText>
 
       <AppCard style={styles.sectionCard}>
@@ -38,8 +38,8 @@ export function PrivacyPolicyScreen({ navigation }: Props) {
         </AppText>
         <AppText variant="body">
           Coletamos apenas o que você informa para usar o aplicativo: seu nome de exibição, e-mail,
-          senha protegida por hash, preferências de uso e seus registros emocionais (estado,
-          contextos e anotações opcionais).
+          senha protegida por hash criptográfico, preferências de uso e seus registros emocionais
+          (classificados como dados pessoais sensíveis pela Lei nº 13.709/2018).
         </AppText>
       </AppCard>
 
@@ -49,8 +49,9 @@ export function PrivacyPolicyScreen({ navigation }: Props) {
         </AppText>
         <AppText variant="body">
           Seus dados são usados exclusivamente para autenticar sua conta, manter seu histórico e
-          preferências salvos, gerar resumos de reflexão para você e adaptar a interface às suas
-          escolhas.
+          floricultura semanal salvos, gerar resumos de reflexão e relatórios em PDF para você e
+          adaptar a interface às suas escolhas. O aplicativo não realiza diagnóstico nem substitui
+          acompanhamento profissional.
         </AppText>
       </AppCard>
 
@@ -59,19 +60,32 @@ export function PrivacyPolicyScreen({ navigation }: Props) {
           3. Onde os dados são armazenados
         </AppText>
         <AppText variant="body">
-          Seus registros e preferências ficam armazenados em banco de dados associado à sua conta, e
-          seu token de acesso fica salvo de forma segura no dispositivo.
+          Seus registros e preferências ficam armazenados no banco de dados PostgreSQL associado à
+          sua conta, acessados apenas mediante token JWT, e seu token fica protegido no dispositivo.
         </AppText>
       </AppCard>
 
       <AppCard style={styles.sectionCard}>
         <AppText variant="cardTitle" style={styles.sectionTitle}>
-          4. Sem divulgação a terceiros e seus direitos
+          4. Envio opcional de texto à API de IAGen
         </AppText>
         <AppText variant="body">
-          Seus registros emocionais não são vendidos nem divulgados a terceiros. A qualquer momento
-          você pode editar ou excluir registros, exportar seus dados ou excluir sua conta
-          permanentemente em Ajustes.
+          Quando você mantém marcada a opção de mensagem acolhedora ao registrar um estado
+          emocional, apenas o nível de humor, os contextos e o texto opcional do relato são enviados
+          de forma anonimizada (sem nome, e-mail ou identificador da conta) à API de IAGen (Google
+          Gemini) para gerar uma mensagem curta inspirada na flor do dia. Você pode desativar esse
+          envio em qualquer registro.
+        </AppText>
+      </AppCard>
+
+      <AppCard style={styles.sectionCard}>
+        <AppText variant="cardTitle" style={styles.sectionTitle}>
+          5. Sem divulgação a terceiros e seus direitos
+        </AppText>
+        <AppText variant="body">
+          Seus dados não são vendidos nem divulgados a terceiros. A qualquer momento você pode
+          baixar seu relatório em PDF, exportar seus dados em JSON, editar ou excluir registros ou
+          excluir permanentemente sua conta e todos os seus dados na aba Ajustes.
         </AppText>
       </AppCard>
     </ScreenContainer>

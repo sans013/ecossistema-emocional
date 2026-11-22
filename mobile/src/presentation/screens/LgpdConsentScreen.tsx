@@ -65,7 +65,7 @@ export function LgpdConsentScreen() {
           Seus dados são seus
         </AppText>
         <AppText variant="subtitle" style={styles.subtitle}>
-          Transparência total, em linguagem simples
+          Aviso sobre dados pessoais sensíveis (LGPD — Lei nº 13.709/2018)
         </AppText>
       </View>
 
@@ -73,28 +73,28 @@ export function LgpdConsentScreen() {
         <View style={styles.cardIntro}>
           <Ionicons name="leaf-outline" size={22} color={COLORS.primary} />
           <AppText variant="body" style={styles.cardIntroText}>
-            Guardamos seus registros emocionais com segurança apenas para o seu autoconhecimento.
+            Este aplicativo pode armazenar informações sensíveis sobre o seu bem-estar emocional, exclusivamente para apoiar o seu autoconhecimento e reflexão pessoal.
           </AppText>
         </View>
 
         <View style={styles.bulletRow}>
           <Ionicons name="checkmark" size={18} color={COLORS.primary} />
           <AppText variant="body" style={styles.bulletText}>
-            Salvos com proteção e criptografia
+            Senhas criptografadas e acesso restrito por token apenas à sua conta
           </AppText>
         </View>
 
         <View style={styles.bulletRow}>
           <Ionicons name="checkmark" size={18} color={COLORS.primary} />
           <AppText variant="body" style={styles.bulletText}>
-            Nunca compartilhados com terceiros
+            Envio opcional e anonimizado do relato à API de IAGen para gerar mensagens da flor
           </AppText>
         </View>
 
         <View style={styles.bulletRow}>
           <Ionicons name="checkmark" size={18} color={COLORS.primary} />
           <AppText variant="body" style={styles.bulletText}>
-            Você pode editar, exportar ou excluir quando quiser
+            Nunca divulgados a terceiros; você pode exportar em PDF ou excluir sua conta quando quiser
           </AppText>
         </View>
 

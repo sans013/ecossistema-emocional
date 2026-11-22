@@ -2,10 +2,12 @@ import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
+import { getFlowerByMood } from '../../domain/catalog/FlowerCatalog';
 import { getMoodDefinition } from '../../domain/entities/MoodCatalog';
 import { AppButton } from '../components/AppButton';
 import { AppCard } from '../components/AppCard';
 import { AppText } from '../components/AppText';
+import { FlowerIllustration } from '../components/FlowerIllustration';
 import { ScreenContainer } from '../components/ScreenContainer';
 import { COLORS, RADII, SPACING } from '../theme/tokens';
 import { AppStackParamList } from '../types/navigation';
@@ -16,19 +18,27 @@ type Props = NativeStackScreenProps<AppStackParamList, 'RecordSaved'>;
 export function RecordSavedScreen({ navigation, route }: Props) {
   const { preferences, ecosystemLevel } = useSession();
   const mood = getMoodDefinition(route.params.nivelHumor, preferences.rotulosHumorCustom);
+  const flower = getFlowerByMood(route.params.nivelHumor);
+  const messageText = route.params.mensagemFlor || flower.mensagemFallback;
 
   return (
     <ScreenContainer>
       <View style={styles.centerBlock}>
-        <View style={styles.checkCircle}>
-          <Ionicons name="checkmark" size={30} color={COLORS.primary} />
+        <View
+          style={[
+            styles.flowerCircle,
+            { backgroundColor: flower.ceuFundo, borderColor: flower.ceuBorda },
+          ]}
+        >
+          <FlowerIllustration nivelHumor={route.params.nivelHumor} size={74} />
         </View>
 
         <View style={[styles.moodPill, { backgroundColor: mood.softColor }]}>
           <AppText variant="caption" color={COLORS.textPrimary} style={styles.moodPillText}>
+            {flower.iconeClima} {flower.flor} •{' '}
             {preferences.rotulosSempreVisiveis
-              ? `${mood.displayLabel} • ${mood.climateLabel}`
-              : mood.climateLabel}
+              ? `${mood.displayLabel} (${flower.clima})`
+              : flower.clima}
           </AppText>
         </View>
 
@@ -37,9 +47,24 @@ export function RecordSavedScreen({ navigation, route }: Props) {
         </AppText>
 
         <AppText variant="subtitle" style={styles.subtitle}>
-          Você reservou um momento para cuidar de si. Isso já é um cuidado bonito.
+          Você reservou um momento para cuidar de si. A flor deste dia já está na sua floricultura.
         </AppText>
       </View>
+
+      <AppCard style={styles.messageCard}>
+        <View style={styles.messageHeader}>
+          <Ionicons name="sparkles-outline" size={18} color={COLORS.primary} />
+          <AppText variant="cardTitle">Mensagem da {flower.flor}</AppText>
+        </View>
+        <AppText variant="body" style={styles.messageText}>
+          “{messageText}”
+        </AppText>
+        <AppText variant="caption" style={styles.messageFooter}>
+          {route.params.mensagemFlor
+            ? 'Gerada via IAGen com base nos materiais botânicos (apoio reflexivo não clínico).'
+            : `Simbolismo: ${flower.simbolismo}`}
+        </AppText>
+      </AppCard>
 
       {ecosystemLevel !== 'desativada' && (
         <AppCard style={styles.gardenCard}>
@@ -75,14 +100,14 @@ export function RecordSavedScreen({ navigation, route }: Props) {
 const styles = StyleSheet.create({
   centerBlock: {
     alignItems: 'center',
-    marginTop: SPACING.lg,
+    marginTop: SPACING.md,
     marginBottom: SPACING.md,
   },
-  checkCircle: {
-    width: 68,
-    height: 68,
+  flowerCircle: {
+    width: 112,
+    height: 112,
     borderRadius: RADII.pill,
-    backgroundColor: COLORS.primarySoft,
+    borderWidth: 1.5,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: SPACING.md,
@@ -102,6 +127,22 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     textAlign: 'center',
+  },
+  messageCard: {
+    marginBottom: SPACING.md,
+  },
+  messageHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 8,
+  },
+  messageText: {
+    lineHeight: 22,
+    marginBottom: 8,
+  },
+  messageFooter: {
+    color: COLORS.textSecondary,
   },
   gardenCard: {
     flexDirection: 'row',

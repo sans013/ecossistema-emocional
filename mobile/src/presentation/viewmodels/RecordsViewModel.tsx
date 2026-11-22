@@ -6,12 +6,14 @@ import React, {
   useMemo,
   useState,
 } from 'react';
+import { getFlowerByMood } from '../../domain/catalog/FlowerCatalog';
 import {
   ContextSlug,
   EmotionalRecord,
   ReflectionSummary,
 } from '../../domain/entities/EmotionalRecord';
 import { EmotionalRecordRepository } from '../../domain/repositories/EmotionalRecordRepository';
+import { IAGenRepository } from '../../domain/repositories/IAGenRepository';
 import { ObservabilityService } from '../../domain/services/ObservabilityService';
 import { useSession } from './SessionContext';
 
@@ -26,7 +28,13 @@ export interface RecordsContextValue {
     nivelHumor: number;
     contextos: ContextSlug[];
     pensamento: string | null;
+    mensagemFlor?: string | null;
   }) => Promise<EmotionalRecord>;
+  generateFlowerMessage: (params: {
+    nivelHumor: number;
+    contextos: ContextSlug[];
+    pensamento: string | null;
+  }) => Promise<{ mensagem: string; geradoPorIA: boolean }>;
   getRecordById: (id: string) => Promise<EmotionalRecord>;
   updateRecord: (
     id: string,
@@ -34,6 +42,7 @@ export interface RecordsContextValue {
       nivelHumor: number;
       contextos: ContextSlug[];
       pensamento: string | null;
+      mensagemFlor?: string | null;
     }
   ) => Promise<EmotionalRecord>;
   deleteRecord: (id: string) => Promise<void>;
@@ -44,12 +53,14 @@ const RecordsContext = createContext<RecordsContextValue | null>(null);
 
 interface RecordsProviderProps {
   recordRepository: EmotionalRecordRepository;
+  iagenRepository?: IAGenRepository;
   observability: ObservabilityService;
   children: React.ReactNode;
 }
 
 export function RecordsProvider({
   recordRepository,
+  iagenRepository,
   observability,
   children,
 }: RecordsProviderProps) {
@@ -94,6 +105,7 @@ export function RecordsProvider({
       nivelHumor: number;
       contextos: ContextSlug[];
       pensamento: string | null;
+      mensagemFlor?: string | null;
     }) => {
       const created = await recordRepository.create(params);
       setRecords((prev) => [created, ...prev]);
@@ -101,6 +113,29 @@ export function RecordsProvider({
       return created;
     },
     [recordRepository, observability]
+  );
+
+  const generateFlowerMessage = useCallback(
+    async (params: {
+      nivelHumor: number;
+      contextos: ContextSlug[];
+      pensamento: string | null;
+    }): Promise<{ mensagem: string; geradoPorIA: boolean }> => {
+      const fallback = getFlowerByMood(params.nivelHumor).mensagemFallback;
+      if (!iagenRepository) {
+        return { mensagem: fallback, geradoPorIA: false };
+      }
+
+      try {
+        const response = await iagenRepository.generateFlowerMessage(params);
+        observability.logEvent('iagen_flower_message_generated');
+        return { mensagem: response.mensagem, geradoPorIA: true };
+      } catch (err) {
+        observability.recordError(err, { action: 'generate_flower_message' });
+        return { mensagem: fallback, geradoPorIA: false };
+      }
+    },
+    [iagenRepository, observability]
   );
 
   const getRecordById = useCallback(
@@ -117,6 +152,7 @@ export function RecordsProvider({
         nivelHumor: number;
         contextos: ContextSlug[];
         pensamento: string | null;
+        mensagemFlor?: string | null;
       }
     ) => {
       const updated = await recordRepository.update(id, params);
@@ -152,6 +188,7 @@ export function RecordsProvider({
       setSelectedContextFilter,
       refreshRecords,
       createRecord,
+      generateFlowerMessage,
       getRecordById,
       updateRecord,
       deleteRecord,
@@ -164,6 +201,7 @@ export function RecordsProvider({
       selectedContextFilter,
       refreshRecords,
       createRecord,
+      generateFlowerMessage,
       getRecordById,
       updateRecord,
       deleteRecord,

@@ -65,6 +65,9 @@ CREATE TABLE IF NOT EXISTS registros_emocionais (
     )
 );
 
+ALTER TABLE registros_emocionais
+  ADD COLUMN IF NOT EXISTS mensagem_flor TEXT NULL;
+
 -- 5. Relacionamento N:N entre Registros Emocionais e Contextos
 CREATE TABLE IF NOT EXISTS registro_contextos (
     registro_id UUID NOT NULL REFERENCES registros_emocionais(id) ON DELETE CASCADE,

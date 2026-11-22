@@ -22,6 +22,7 @@ export class ApiEmotionalRecordRepository implements EmotionalRecordRepository {
         nivel_humor: params.nivelHumor,
         contextos: params.contextos,
         pensamento: params.pensamento,
+        ...(params.mensagemFlor !== undefined ? { mensagem_flor: params.mensagemFlor } : {}),
       },
     });
     return mapRecord(res.registro);
@@ -49,6 +50,7 @@ export class ApiEmotionalRecordRepository implements EmotionalRecordRepository {
         nivel_humor: params.nivelHumor,
         contextos: params.contextos,
         pensamento: params.pensamento,
+        ...(params.mensagemFlor !== undefined ? { mensagem_flor: params.mensagemFlor } : {}),
       },
     });
     return mapRecord(res.registro);

@@ -27,6 +27,7 @@ export interface EmotionalRecord {
   nivelHumor: number;
   contextos: ContextSlug[];
   pensamento: string | null;
+  mensagemFlor?: string | null;
   registradoEm: string;
   atualizadoEm: string;
 }
