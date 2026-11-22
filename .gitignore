@@ -1,0 +1,22 @@
+# Variáveis de ambiente e credenciais (NUNCA versionar)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.keystore
+*.jks
+google-services.json
+GoogleService-Info.plist
+
+# Dependências e builds
+node_modules/
+dist/
+build/
+.expo/
+coverage/
+
+# Logs locais e arquivos de sistema
+*.log
+.DS_Store
+Thumbs.db
