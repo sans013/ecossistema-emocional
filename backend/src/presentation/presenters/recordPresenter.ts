@@ -9,6 +9,7 @@ export function presentEmotionalRecord(record: EmotionalRecord) {
     nivel_humor: record.nivelHumor,
     contextos: record.contextos,
     pensamento: record.pensamento,
+    mensagem_flor: record.mensagemFlor ?? null,
     registrado_em: record.registradoEm,
     atualizado_em: record.atualizadoEm,
   };

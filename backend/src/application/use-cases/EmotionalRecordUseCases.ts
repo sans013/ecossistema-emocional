@@ -18,6 +18,7 @@ export class CreateEmotionalRecordUseCase {
       nivelHumor: input.nivel_humor,
       contextos: input.contextos,
       pensamento: input.pensamento,
+      mensagemFlor: input.mensagem_flor ?? null,
     });
   }
 }
@@ -57,6 +58,7 @@ export class UpdateEmotionalRecordUseCase {
       nivelHumor: input.nivel_humor,
       contextos: input.contextos,
       pensamento: input.pensamento,
+      ...(input.mensagem_flor !== undefined ? { mensagemFlor: input.mensagem_flor } : {}),
     });
 
     if (!updated) {

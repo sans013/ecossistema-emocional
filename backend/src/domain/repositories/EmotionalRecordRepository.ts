@@ -4,17 +4,26 @@ import {
   ReflectionSummary,
 } from '../entities/EmotionalRecord';
 
+export interface SaveRecordParams {
+  nivelHumor: number;
+  contextos: ContextSlug[];
+  pensamento: string | null;
+  mensagemFlor?: string | null;
+}
+
 export interface CreateEmotionalRecordData {
   usuarioId: string;
   nivelHumor: number;
   contextos: ContextSlug[];
   pensamento: string | null;
+  mensagemFlor?: string | null;
 }
 
 export interface UpdateEmotionalRecordData {
   nivelHumor: number;
   contextos: ContextSlug[];
   pensamento: string | null;
+  mensagemFlor?: string | null;
 }
 
 export interface ListEmotionalRecordsFilter {

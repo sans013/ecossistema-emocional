@@ -6,6 +6,7 @@ import { HttpClient } from './src/data/http/HttpClient';
 import { AppObservabilityService } from './src/data/observability/AppObservabilityService';
 import { ApiAuthRepository } from './src/data/repositories/ApiAuthRepository';
 import { ApiEmotionalRecordRepository } from './src/data/repositories/ApiEmotionalRecordRepository';
+import { ApiIAGenRepository } from './src/data/repositories/ApiIAGenRepository';
 import { ApiUserRepository } from './src/data/repositories/ApiUserRepository';
 import { SecureTokenStorage } from './src/data/storage/SecureTokenStorage';
 import { UserExportData } from './src/domain/entities/User';
@@ -36,11 +37,13 @@ export default function App() {
     const httpClient = new HttpClient(env.apiBaseUrl, tokenStorage, observability);
     const userRepository = new ApiUserRepository(httpClient);
     const recordRepository = new ApiEmotionalRecordRepository(httpClient);
+    const iagenRepository = new ApiIAGenRepository();
 
     return {
       authRepository: new ApiAuthRepository(httpClient),
       userRepository,
       recordRepository,
+      iagenRepository,
       tokenStorage,
       observability,
       exportUserData: () => userRepository.exportData(),
@@ -57,6 +60,7 @@ export default function App() {
       >
         <RecordsProvider
           recordRepository={dependencies.recordRepository}
+          iagenRepository={dependencies.iagenRepository}
           observability={dependencies.observability}
         >
           <AppShell exportUserData={dependencies.exportUserData} />

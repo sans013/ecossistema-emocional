@@ -2,13 +2,14 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { ApiError } from '../../data/http/HttpClient';
+import { getFlowerByMood } from '../../domain/catalog/FlowerCatalog';
 import { CONTEXT_CATALOG, EmotionalRecord } from '../../domain/entities/EmotionalRecord';
 import { getMoodDefinition } from '../../domain/entities/MoodCatalog';
 import { AppButton } from '../components/AppButton';
 import { AppCard } from '../components/AppCard';
 import { AppText } from '../components/AppText';
 import { ConnectionBanner } from '../components/ConnectionBanner';
-import { MoodGlyph } from '../components/MoodGlyph';
+import { FlowerIllustration } from '../components/FlowerIllustration';
 import { ScreenContainer } from '../components/ScreenContainer';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { ConfirmModal } from '../modals/ConfirmModal';
@@ -97,6 +98,7 @@ export function RecordDetailScreen({ navigation, route }: Props) {
   }
 
   const mood = getMoodDefinition(record.nivelHumor, preferences.rotulosHumorCustom);
+  const flower = getFlowerByMood(record.nivelHumor);
   const contextNames = record.contextos
     .map((slug) => CONTEXT_CATALOG.find((c) => c.slug === slug)?.nome)
     .filter((n): n is string => Boolean(n));
@@ -114,19 +116,31 @@ export function RecordDetailScreen({ navigation, route }: Props) {
 
       <AppCard style={styles.card}>
         <View style={styles.moodHeader}>
-          <MoodGlyph
-            iconKey={mood.iconKey}
-            softColor={mood.softColor}
-            accentColor={mood.accentColor}
-            size="lg"
-            showLabels={false}
-          />
+          <View
+            style={[
+              styles.flowerBadge,
+              { backgroundColor: flower.ceuFundo, borderColor: flower.ceuBorda },
+            ]}
+          >
+            <FlowerIllustration nivelHumor={record.nivelHumor} size={54} />
+          </View>
           <View style={styles.moodInfo}>
             <AppText variant="title">
-              {preferences.rotulosSempreVisiveis ? mood.displayLabel : mood.climateLabel}
+              {preferences.rotulosSempreVisiveis ? mood.displayLabel : flower.clima}
             </AppText>
-            <AppText variant="subtitle">Clima associado: {mood.climateLabel}</AppText>
+            <AppText variant="subtitle">
+              {flower.iconeClima} {flower.flor} • {flower.clima}
+            </AppText>
           </View>
+        </View>
+
+        <View style={styles.flowerMessageBox}>
+          <AppText variant="cardTitle" style={styles.blockLabel}>
+            Mensagem da flor
+          </AppText>
+          <AppText variant="body">
+            “{record.mensagemFlor || flower.mensagemFallback}”
+          </AppText>
         </View>
 
         <View style={styles.block}>
@@ -214,10 +228,24 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 14,
-    marginBottom: SPACING.lg,
+    marginBottom: SPACING.md,
+  },
+  flowerBadge: {
+    width: 74,
+    height: 74,
+    borderRadius: RADII.pill,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   moodInfo: {
     flex: 1,
+  },
+  flowerMessageBox: {
+    backgroundColor: COLORS.surfaceMuted,
+    borderRadius: RADII.md,
+    padding: 12,
+    marginBottom: SPACING.md,
   },
   block: {
     marginBottom: SPACING.md,

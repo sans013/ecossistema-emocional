@@ -1,0 +1,52 @@
+[
+  {
+    "nivelHumor": 1,
+    "rotuloPadrao": "Muito mal",
+    "clima": "Tempestade",
+    "flor": "Lírio-da-paz",
+    "nomeCientifico": "Spathiphyllum wallisii",
+    "simbolismo": "Abrigo, resistência silenciosa na sombra e permissão para desacelerar sem culpa.",
+    "tomRecomendado": "Calmo, protetor e breve, acolhendo o peso do momento sem exigir positividade forçada.",
+    "focoPratico": "Sugerir um gesto mínimo de pausa ou conforto físico simples, como respirar fundo ou descansar."
+  },
+  {
+    "nivelHumor": 2,
+    "rotuloPadrao": "Mal",
+    "clima": "Névoa",
+    "flor": "Lavanda",
+    "nomeCientifico": "Lavandula angustifolia",
+    "simbolismo": "Acolhimento, alívio suave da tensão e cuidado gentil em dias nublados.",
+    "tomRecomendado": "Gentil, sereno e validador, reconhecendo que dias difíceis fazem parte do percurso.",
+    "focoPratico": "Encorajar um passo pequeno e gentil consigo mesmo, respeitando o limite do dia."
+  },
+  {
+    "nivelHumor": 3,
+    "rotuloPadrao": "Neutro",
+    "clima": "Brisa",
+    "flor": "Camomila",
+    "nomeCientifico": "Matricaria chamomilla",
+    "simbolismo": "Serenidade, equilíbrio cotidiano e valorização das pausas simples.",
+    "tomRecomendado": "Tranquilo, curioso e equilibrado, convidando a perceber detalhes leves do dia.",
+    "focoPratico": "Propor uma breve observação do que manteve o dia estável ou trouxe respiro."
+  },
+  {
+    "nivelHumor": 4,
+    "rotuloPadrao": "Bem",
+    "clima": "Sol ameno",
+    "flor": "Margarida",
+    "nomeCientifico": "Bellis perennis",
+    "simbolismo": "Leveza, clareza e apreciação das pequenas conquistas do cotidiano.",
+    "tomRecomendado": "Caloroso, leve e encorajador, ajudando a registrar o que contribuiu para esse bem-estar.",
+    "focoPratico": "Convidar a reconhecer o hábito ou momento que favoreceu essa sensação boa."
+  },
+  {
+    "nivelHumor": 5,
+    "rotuloPadrao": "Muito bem",
+    "clima": "Céu limpo",
+    "flor": "Girassol",
+    "nomeCientifico": "Helianthus annuus",
+    "simbolismo": "Vitalidade, abertura e celebração genuína de momentos luminosos.",
+    "tomRecomendado": "Alegre, sereno e afetuoso, celebrando o momento sem criar pressão para mantê-lo sempre igual.",
+    "focoPratico": "Incentivar a guardar na memória o que trouxe energia e leveza hoje."
+  }
+]

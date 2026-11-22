@@ -2,6 +2,11 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Platform, Pressable, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ApiError } from '../../data/http/HttpClient';
+import {
+  exportEmotionalReportPdf,
+  PdfReportRecord,
+} from '../../data/services/PdfReportService';
+import { getFlowerByMood } from '../../domain/catalog/FlowerCatalog';
 import { ReflectionSummary } from '../../domain/entities/EmotionalRecord';
 import { getMoodDefinition } from '../../domain/entities/MoodCatalog';
 import { UserExportData } from '../../domain/entities/User';
@@ -18,14 +23,34 @@ interface ReflectionScreenProps {
   exportUserData: () => Promise<UserExportData>;
 }
 
+function normalizeExportedRecords(rawList: unknown[]): PdfReportRecord[] {
+  return rawList.map((entry, idx) => {
+    const item = entry as Record<string, unknown>;
+    return {
+      id: String(item.id ?? idx),
+      nivelHumor: Number(item.nivelHumor ?? item.nivel_humor ?? 3),
+      contextos: Array.isArray(item.contextos) ? item.contextos.map(String) : [],
+      pensamento:
+        typeof item.pensamento === 'string' ? item.pensamento : null,
+      registradoEm: String(item.registradoEm ?? item.registrado_em ?? new Date().toISOString()),
+      mensagemFlor:
+        typeof (item.mensagemFlor ?? item.mensagem_flor) === 'string'
+          ? String(item.mensagemFlor ?? item.mensagem_flor)
+          : null,
+    };
+  });
+}
+
 export function ReflectionScreen({ exportUserData }: ReflectionScreenProps) {
-  const { preferences, isConnected } = useSession();
+  const { user, preferences, isConnected } = useSession();
   const { fetchReflectionSummary, records } = useRecords();
 
   const [period, setPeriod] = useState<7 | 30>(7);
   const [summary, setSummary] = useState<ReflectionSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [exportingPdf, setExportingPdf] = useState(false);
+  const [pdfMessage, setPdfMessage] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
   const [exportedPayload, setExportedPayload] = useState<string | null>(null);
 
@@ -47,6 +72,39 @@ export function ReflectionScreen({ exportUserData }: ReflectionScreenProps) {
   useEffect(() => {
     void loadSummary();
   }, [loadSummary, records.length]);
+
+  const handleExportPdf = async () => {
+    setExportingPdf(true);
+    setPdfMessage(null);
+    setErrorMessage(null);
+    try {
+      const data = (await exportUserData()) as unknown as Record<string, unknown>;
+      const usuarioRaw = (data.usuario ?? {}) as Record<string, unknown>;
+      const registrosRaw = Array.isArray(data.registros) ? data.registros : records;
+
+      await exportEmotionalReportPdf({
+        nomeUsuario: String(
+          usuarioRaw.nomeExibicao ?? usuarioRaw.nome_exibicao ?? user?.nomeExibicao ?? 'Usuário'
+        ),
+        emailUsuario: String(usuarioRaw.email ?? user?.email ?? ''),
+        periodoDias: period,
+        registros: normalizeExportedRecords(registrosRaw),
+        rotulosHumorCustom: preferences.rotulosHumorCustom,
+      });
+
+      setPdfMessage(
+        `Relatório em PDF dos últimos ${period} dias gerado com seus registros persistidos.`
+      );
+    } catch (err) {
+      setErrorMessage(
+        err instanceof ApiError
+          ? err.message
+          : 'Não foi possível gerar o relatório em PDF agora.'
+      );
+    } finally {
+      setExportingPdf(false);
+    }
+  };
 
   const handleExport = async () => {
     setExporting(true);
@@ -123,6 +181,7 @@ export function ReflectionScreen({ exportUserData }: ReflectionScreenProps) {
               <View style={styles.barsList}>
                 {summary.frequenciaHumores.map((item) => {
                   const mood = getMoodDefinition(item.nivelHumor, preferences.rotulosHumorCustom);
+                  const flower = getFlowerByMood(item.nivelHumor);
                   const widthPercent = `${Math.round(
                     Math.max(0.12, item.quantidade / maxMoodCount) * 100
                   )}%` as const;
@@ -131,8 +190,8 @@ export function ReflectionScreen({ exportUserData }: ReflectionScreenProps) {
                     <View key={item.nivelHumor} style={styles.barRow}>
                       <AppText variant="caption" style={styles.barLabel}>
                         {preferences.rotulosSempreVisiveis
-                          ? mood.displayLabel
-                          : mood.climateLabel}
+                          ? `${mood.displayLabel} (${flower.flor})`
+                          : flower.flor}
                       </AppText>
 
                       <View style={styles.barTrack}>
@@ -196,6 +255,19 @@ export function ReflectionScreen({ exportUserData }: ReflectionScreenProps) {
           O que ajudou a trazer mais leveza nos dias nublados ou pesados desta semana?
         </AppText>
       </AppCard>
+
+      <AppButton
+        label={`Baixar relatório em PDF (${period} dias)`}
+        loading={exportingPdf}
+        onPress={() => void handleExportPdf()}
+        style={styles.exportBtn}
+      />
+
+      {pdfMessage && (
+        <AppText variant="caption" color={COLORS.primaryDark} style={styles.pdfFeedback}>
+          {pdfMessage}
+        </AppText>
+      )}
 
       <AppButton
         label="Exportar meus dados"
@@ -280,7 +352,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   barLabel: {
-    width: 78,
+    width: 112,
     fontWeight: '600',
   },
   barTrack: {
@@ -326,7 +398,11 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   exportBtn: {
+    marginBottom: SPACING.sm,
+  },
+  pdfFeedback: {
     marginBottom: SPACING.md,
+    fontWeight: '600',
   },
   exportCard: {
     marginBottom: SPACING.md,

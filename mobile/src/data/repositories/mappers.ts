@@ -36,6 +36,7 @@ export interface ApiRecordDto {
   nivel_humor: number;
   contextos: ContextSlug[];
   pensamento: string | null;
+  mensagem_flor?: string | null;
   registrado_em: string;
   atualizado_em: string;
 }
@@ -77,6 +78,7 @@ export function mapRecord(dto: ApiRecordDto): EmotionalRecord {
     nivelHumor: dto.nivel_humor,
     contextos: dto.contextos ?? [],
     pensamento: dto.pensamento,
+    mensagemFlor: dto.mensagem_flor ?? null,
     registradoEm: dto.registrado_em,
     atualizadoEm: dto.atualizado_em,
   };

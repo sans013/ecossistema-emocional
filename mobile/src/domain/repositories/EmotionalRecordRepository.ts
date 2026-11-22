@@ -8,6 +8,7 @@ export interface SaveRecordParams {
   nivelHumor: number;
   contextos: ContextSlug[];
   pensamento: string | null;
+  mensagemFlor?: string | null;
 }
 
 export interface ListRecordsParams {
