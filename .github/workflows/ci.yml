@@ -115,4 +115,13 @@ jobs:
       run:
         working-directory: iagen-api
     steps:
-      - uses
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Instalar dependencias da IAGen API
+        run: npm ci
+      - name: Verificar tipos (TypeScript)
+        run: npm run typecheck
+      - name: Rodar testes unitarios
+        run: npm test
