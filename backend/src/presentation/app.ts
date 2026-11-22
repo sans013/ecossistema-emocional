@@ -8,6 +8,8 @@ export interface AppDependencies {
   checkDatabase: () => Promise<boolean>;
   authRouter?: Router;
   meRouter?: Router;
+  recordRouter?: Router;
+  reflectionRouter?: Router;
 }
 
 export function createApp({
@@ -15,6 +17,8 @@ export function createApp({
   checkDatabase,
   authRouter,
   meRouter,
+  recordRouter,
+  reflectionRouter,
 }: AppDependencies): Express {
   const app = express();
 
@@ -53,6 +57,12 @@ export function createApp({
   }
   if (meRouter) {
     app.use('/api/v1/me', meRouter);
+  }
+  if (recordRouter) {
+    app.use('/api/v1/registros', recordRouter);
+  }
+  if (reflectionRouter) {
+    app.use('/api/v1/reflexao', reflectionRouter);
   }
 
   app.use((_req, res) => {

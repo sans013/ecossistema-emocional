@@ -36,27 +36,56 @@ jobs:
         env:
           PGPASSWORD: ci_ephemeral_password
         run: psql -h localhost -U postgres -d ecossistema_emocional_ci -v ON_ERROR_STOP=1 -f database/init.sql
-
+        
   backend-checks:
-    name: Backend - Lint e Testes
+    name: Backend - Typecheck, Unitários e Integração
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: backend
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ci_ephemeral_password
+          POSTGRES_DB: ecossistema_emocional_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - name: Verificar inicialização do backend
-        id: check_backend
-        run: test -f package.json && echo "exists=true" >> "$GITHUB_OUTPUT" || echo "exists=false" >> "$GITHUB_OUTPUT"
-      - name: Instalar dependências
-        if: steps.check_backend.outputs.exists == 'true'
+      - name: Instalar cliente psql e aplicar database/init.sql
+        env:
+          PGPASSWORD: ci_ephemeral_password
+        run: |
+          sudo apt-get update && sudo apt-get install -y postgresql-client
+          psql -h localhost -U postgres -d ecossistema_emocional_ci -v ON_ERROR_STOP=1 -f database/init.sql
+      - name: Instalar dependências do backend
+        working-directory: backend
         run: npm ci
-      - name: Rodar testes
-        if: steps.check_backend.outputs.exists == 'true'
+      - name: Verificar tipos (TypeScript)
+        working-directory: backend
+        run: npm run typecheck
+      - name: Rodar testes unitários
+        working-directory: backend
         run: npm test
+      - name: Rodar testes de integração (PostgreSQL real)
+        working-directory: backend
+        env:
+          NODE_ENV: test
+          PORT: 3001
+          DATABASE_URL: postgresql://postgres:ci_ephemeral_password@localhost:5432/ecossistema_emocional_ci
+          JWT_SECRET: segredo_ci_efemero_com_mais_de_32_caracteres_123456
+          JWT_EXPIRES_IN: 1h
+          BCRYPT_SALT_ROUNDS: 10
+          CORS_ORIGIN: http://localhost:8081
+        run: npm run test:integration
+
 
   mobile-checks:
     name: Mobile - Lint e Testes

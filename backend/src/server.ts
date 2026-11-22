@@ -12,6 +12,8 @@ const app = createApp({
   checkDatabase: checkDatabaseConnection,
   authRouter: container.authRouter,
   meRouter: container.meRouter,
+  recordRouter: container.recordRouter,
+  reflectionRouter: container.reflectionRouter,
 });
 
 const server = app.listen(env.PORT, () => {
