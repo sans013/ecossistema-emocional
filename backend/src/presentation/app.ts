@@ -1,4 +1,4 @@
-import express, { Express } from 'express';
+import express, { Express, Router } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import { errorHandler } from './middlewares/errorHandler';
@@ -6,9 +6,16 @@ import { errorHandler } from './middlewares/errorHandler';
 export interface AppDependencies {
   corsOrigin: string;
   checkDatabase: () => Promise<boolean>;
+  authRouter?: Router;
+  meRouter?: Router;
 }
 
-export function createApp({ corsOrigin, checkDatabase }: AppDependencies): Express {
+export function createApp({
+  corsOrigin,
+  checkDatabase,
+  authRouter,
+  meRouter,
+}: AppDependencies): Express {
   const app = express();
 
   const allowedOrigins = corsOrigin
@@ -40,6 +47,13 @@ export function createApp({ corsOrigin, checkDatabase }: AppDependencies): Expre
       });
     }
   });
+
+  if (authRouter) {
+    app.use('/api/v1/auth', authRouter);
+  }
+  if (meRouter) {
+    app.use('/api/v1/me', meRouter);
+  }
 
   app.use((_req, res) => {
     res.status(404).json({
