@@ -1,13 +1,17 @@
 import { getEnv } from './infra/config/env';
-import { checkDatabaseConnection, closePool } from './infra/database/pool';
+import { createContainer } from './infra/container/createContainer';
+import { checkDatabaseConnection, closePool, getPool } from './infra/database/pool';
 import { logger } from './infra/logging/logger';
 import { createApp } from './presentation/app';
 
 const env = getEnv();
+const container = createContainer(getPool(), env);
 
 const app = createApp({
   corsOrigin: env.CORS_ORIGIN,
   checkDatabase: checkDatabaseConnection,
+  authRouter: container.authRouter,
+  meRouter: container.meRouter,
 });
 
 const server = app.listen(env.PORT, () => {
