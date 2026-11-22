@@ -27,7 +27,7 @@ export class HttpClient {
     private readonly baseUrl: string,
     private readonly tokenStorage: TokenStorage,
     private readonly observability: ObservabilityService,
-    private readonly fetchImpl: typeof fetch = fetch
+    private readonly fetchImpl: typeof fetch = (input, init) => globalThis.fetch(input, init)
   ) {}
 
   async request<T>(path: string, options: HttpRequestOptions = {}): Promise<T> {
